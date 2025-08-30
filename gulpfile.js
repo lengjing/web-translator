@@ -54,13 +54,13 @@ gulp.task("chrome-rename", (cb) => {
 gulp.task("chrome-babel", () => {
   return gulp
     .src(["dist/chrome/background/*.js"])
-    .pipe(sourcemaps.init())
+    // .pipe(sourcemaps.init())
     .pipe(
       babel({
         presets: ["@babel/preset-env"],
       })
     )
-    .pipe(sourcemaps.write())
+    // .pipe(sourcemaps.write())
     .pipe(gulp.dest("dist/chrome/background"));
 });
 
