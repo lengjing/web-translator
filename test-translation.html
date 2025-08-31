@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Translation Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        p {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Web Translator Extension Test Page</h1>
+    
+    <div class="test-section">
+        <h2>Test Section 1: Basic Translation</h2>
+        <p>This is a test paragraph that should be translated without duplication.</p>
+        <p>Another paragraph to verify consistent translation behavior.</p>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Section 2: Complex Content</h2>
+        <p>This paragraph contains <strong>bold text</strong> and <em>italic text</em> to test translation with nested elements.</p>
+        <ul>
+            <li>First list item for translation testing</li>
+            <li>Second list item with different content</li>
+            <li>Third item to verify list translation</li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Section 3: Mixed Content</h2>
+        <p>This section tests various content types:</p>
+        <blockquote>
+            "This is a quote that should be translated properly without creating duplicate translation nodes."
+        </blockquote>
+        <p>Text after the quote to ensure proper order is maintained.</p>
+    </div>
+    
+    <div class="test-section">
+        <h2>Instructions for Testing</h2>
+        <ol>
+            <li>Load this page in a browser with the Web Translator extension installed</li>
+            <li>Enable dual-language mode in the extension settings</li>
+            <li>Translate the page to any target language</li>
+            <li>Verify that each original text has exactly one translation below it</li>
+            <li>Check that no content is duplicated multiple times</li>
+            <li>Confirm that translation nodes are not generated twice</li>
+        </ol>
+    </div>
+</body>
+</html>

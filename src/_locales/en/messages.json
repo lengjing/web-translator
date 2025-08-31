@@ -3,7 +3,7 @@
     "message": "Translate Web Pages"
   },
   "extensionDescription": {
-    "message": "Translate your page in real time using Google or Yandex."
+    "message": "Translate your page in real time using Google, Yandex, or AI models (LLM)."
   },
   "pageActionTitle": {
     "message": "Translate this page"
@@ -491,6 +491,93 @@
     "message": "Special Page Rules"
   },
   "optionsSpecialRulesNotes":{
-     "message":"This is an advanced option, please make sure you know what you are doing before editing. The priority of the rules added here is higher than that of the <a href=\"https://github.com/immersive-translate/immersive-translate/blob/main/src/lib/specialRules.js\">rules built into the extension</a><br>It's actually not very complicated, it's essentially some css selectors, and here's a <a href=\"https://github.com/immersive-translate/immersive-translate/wiki/Special-Rules-Tutorial\">tutorial </a> to help you.<br>The ultimate goal is to make the default rules for this extension better, so please consider contributing your rules to the <a href=\"https://github.com/immersive-translate/immersive-translate/blob/main/src/lib/specialRules.js\">project</a>"
-   }
+     "message":"This is an advanced option, please make sure you know what you are doing before editing. The priority of the rules added here is higher than that of the <a href=\"https://github.com/web-translator/web-translator/blob/main/src/lib/specialRules.js\">rules built into the extension</a><br>It's actually not very complicated, it's essentially some css selectors, and here's a <a href=\"https://github.com/web-translator/web-translator/wiki/Special-Rules-Tutorial\">tutorial </a> to help you.<br>The ultimate goal is to make the default rules for this extension better, so please consider contributing your rules to the <a href=\"https://github.com/web-translator/web-translator/blob/main/src/lib/specialRules.js\">project</a>"
+   },
+  "lblLLMTranslation": {
+    "message": "LLM Translation"
+  },
+  "lblEnableLLM": {
+    "message": "Enable LLM Translation"
+  },
+  "lblLLMProvider": {
+    "message": "LLM Provider"
+  },
+  "lblLLMModel": {
+    "message": "LLM Model"
+  },
+  "lblLLMApiKey": {
+    "message": "API Key"
+  },
+  "lblLLMApiEndpoint": {
+    "message": "API Endpoint"
+  },
+  "lblLLMMaxTokens": {
+    "message": "Max Tokens"
+  },
+  "lblLLMTemperature": {
+    "message": "Temperature"
+  },
+  "lblLLMPromptTemplate": {
+    "message": "Prompt Template"
+  },
+  "lblLLMTimeout": {
+    "message": "Timeout (ms)"
+  },
+  "msgLLMProvider_openai": {
+    "message": "OpenAI"
+  },
+  "msgLLMProvider_anthropic": {
+    "message": "Anthropic (Claude)"
+  },
+  "msgLLMProvider_google": {
+    "message": "Google (Gemini)"
+  },
+  "msgLLMProvider_azure": {
+    "message": "Azure OpenAI"
+  },
+  "msgLLMProvider_groq": {
+    "message": "Groq"
+  },
+  "msgLLMProvider_ollama": {
+    "message": "Ollama"
+  },
+  "msgLLMProvider_cohere": {
+    "message": "Cohere"
+  },
+  "msgLLMProvider_mistral": {
+    "message": "Mistral AI"
+  },
+  "msgLLMProvider_deepseek": {
+    "message": "DeepSeek"
+  },
+  "msgLLMProvider_moonshot": {
+    "message": "Moonshot (Kimi)"
+  },
+  "msgLLMProvider_zhipu": {
+    "message": "Zhipu AI (GLM)"
+  },
+  "msgLLMProvider_baichuan": {
+    "message": "Baichuan AI"
+  },
+  "msgLLMProvider_qwen": {
+    "message": "Alibaba Qwen"
+  },
+  "msgLLMProvider_custom": {
+    "message": "Custom"
+  },
+  "msgLLMApiKeyPlaceholder": {
+    "message": "Enter your API key"
+  },
+  "msgLLMEndpointPlaceholder": {
+    "message": "Enter API endpoint URL"
+  },
+  "msgLLMPromptPlaceholder": {
+    "message": "Translate the following text from {sourceLang} to {targetLang}. Only return the translated text without any explanation:\n\n{text}"
+  },
+  "msgLLMConfigurationHelp": {
+    "message": "Configure your LLM settings to use AI-powered translation. Requires valid API credentials."
+  },
+  "lblEnableLLM": {
+    "message": "Enable LLM Translation"
+  }
 }

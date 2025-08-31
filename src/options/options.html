@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Immersive Translate</title>
+    <title>Web Translator</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/w3css/4/w3.css">
@@ -11,7 +11,7 @@
 <body class="w3-content" style="max-width:1200px;">
     <nav class="w3-sidebar w3-bar-block w3-collapse w3-top" style="z-index:3; width:300px" id="sideBar">
         <div class="w3-container w3-display-container w3-padding-16">
-            <h3 class="w3-wide"><b>Immersive Translate</b></h3>
+            <h3 class="w3-wide"><b>Web Translator</b></h3>
             <p>__IMMERSIVE_TRANSLATE_VERSION__</p>
         </div>
         <div class="w3-padding-64 w3-large w3-text-grey" style="font-weight:bold">
@@ -21,13 +21,10 @@
             <a href="#storage" class="w3-bar-item w3-button" data-i18n="msgStorage">Storage</a>
             <a href="#others" class="w3-bar-item w3-button" data-i18n="lblOthers">Others</a>
         </div>
-        <b><a href="#donation" class="w3-bar-item w3-button w3-padding"><span data-i18n="lblMakeDonation">Make a donation</span> &#10084;</a></b>
-        <a href="https://github.com/immersive-translate/immersive-translate/blob/main/CHANGELOG.md" class="w3-bar-item w3-button w3-padding" data-i18n="lblReleaseNotes">Release Notes</a>
-        <a href="https://github.com/immersive-translate/immersive-translate/issues" target="blank"
+        <a href="https://github.com/web-translator/web-translator/blob/main/CHANGELOG.md" class="w3-bar-item w3-button w3-padding" data-i18n="lblReleaseNotes">Release Notes</a>
+        <a href="https://github.com/web-translator/web-translator/issues" target="blank"
             class="w3-bar-item w3-button w3-padding" data-i18n="lblReport">Report a problem</a>
-        <a href="https://t.me/+rq848Z09nehlOTgx" target="blank"
-            class="w3-bar-item w3-button w3-padding" data-i18n="lblTelegram">Telegram Group</a>
-        <a href="https://github.com/immersive-translate/immersive-translate" target="blank"
+        <a href="https://github.com/web-translator/web-translator" target="blank"
             class="w3-bar-item w3-button w3-padding" >Github</a>
         <!-- <a href="https://crowdin.com/project/translate-web-pages" target="blank" class="w3-bar-item w3-button w3-padding" data-i18n="lblTranslateInterface">Translate the interface</a> -->
     </nav>
@@ -49,8 +46,7 @@
         <div class="w3-hide-large" style="margin-top:83px"></div>
 
         <header class="w3-container w3-xlarge">
-            <p id="itemSelectedName" data-i18n="lblSettings" style="float: left;">Settings</p>
-            <p style="float: right; display: none;" id="btnPatreon"><a href="https://www.patreon.com/theowenyoung" target="blank"><img src="/icons/patreon.png" style="height: 40px;"></a></p>
+            <p style="float: left;" id="itemSelectedName" data-i18n="lblSettings">Settings</p>
         </header>
 
         <div>
@@ -175,7 +171,7 @@
                         <p><b data-i18n="optionsSpecialRules">Special Rules (Advanced)</b></p>
                     </div>
                 </div>
-          <p data-i18n-html="optionsSpecialRulesNotes" style="color:#999;">This is an advanced option, please make sure you know what you are doing before editing. The priority of the rules added here is higher than that of the <a href="https://github.com/immersive-translate/immersive-translate/blob/main/src/lib/specialRules.js">rules built into the extension</a><br>It's actually not very complicated, it's essentially some css selectors, and here's a <a href="https://github.com/immersive-translate/immersive-translate/wiki/Special-Rules-Tutorial">tutorial </a> to help you.<br>The ultimate goal is to make the default rules for this extension better, so please consider contributing your rules to the <a href="https://github.com/immersive-translate/immersive-translate/blob/main/src/lib/specialRules.js">project</a></p>
+          <p data-i18n-html="optionsSpecialRulesNotes" style="color:#999;">This is an advanced option, please make sure you know what you are doing before editing. The priority of the rules added here is higher than that of the <a href="https://github.com/web-translator/web-translator/blob/main/src/lib/specialRules.js">rules built into the extension</a><br>It's actually not very complicated, it's essentially some css selectors, and here's a <a href="https://github.com/web-translator/web-translator/wiki/Special-Rules-Tutorial">tutorial </a> to help you.<br>The ultimate goal is to make the default rules for this extension better, so please consider contributing your rules to the <a href="https://github.com/web-translator/web-translator/blob/main/src/lib/specialRules.js">project</a></p>
           <textarea rows="5" class="w3-margin-bottom" id="specialRule" placeholder='{"hostname":"twitter.com","selectors":["[data-testid=tweetText]"]}' style="width:100%"></textarea>
                 <button id="addToSpecialRules" class="w3-button w3-blue w3-round w3-margin-right add"
                             data-i18n="lblAdd">Add</button>
@@ -187,8 +183,88 @@
                 <select id="pageTranslatorService" class="w3-select w3-margin">
                     <option value="google">Google</option>
                     <option value="yandex">Yandex</option>
+                    <option value="llm">LLM (AI)</option>
                 </select>
                 <br>
+                <p><b data-i18n="lblTextTranslationService">Text translation service</b></p>
+                <select id="textTranslatorService" class="w3-select w3-margin">
+                    <option value="google">Google</option>
+                    <option value="yandex">Yandex</option>
+                    <option value="bing">Bing</option>
+                    <option value="deepl">DeepL</option>
+                    <option value="llm">LLM (AI)</option>
+                </select>
+                <br>
+                
+                <!-- LLM Configuration Section -->
+                <div id="llmConfigSection" class="w3-card-4 w3-margin w3-round" style="display:none; margin-right:0 !important;">
+                    <div class="w3-container w3-padding">
+                        <h4 data-i18n="lblLLMTranslation">LLM Translation</h4>
+                        <p style="color: #666; font-size: 14px;" data-i18n="msgLLMConfigurationHelp">Configure your LLM settings to use AI-powered translation. Requires valid API credentials.</p>
+                        
+                        <div class="w3-display-container w3-padding w3-margin-top">
+                            <div class="w3-display-left">
+                                <p><b data-i18n="lblEnableLLM">Enable LLM Translation</b></p>
+                            </div>
+                            <div class="w3-display-right">
+                                <select id="enableLLM" class="w3-select">
+                                    <option value="yes" data-i18n="msgYes">Yes</option>
+                                    <option value="no" data-i18n="msgNo">No</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <p><b data-i18n="lblLLMProvider">LLM Provider</b></p>
+                        <select id="llmProvider" class="w3-select">
+                            <option value="openai" data-i18n="msgLLMProvider_openai">OpenAI</option>
+                            <option value="anthropic" data-i18n="msgLLMProvider_anthropic">Anthropic (Claude)</option>
+                            <option value="google" data-i18n="msgLLMProvider_google">Google (Gemini)</option>
+                            <option value="azure" data-i18n="msgLLMProvider_azure">Azure OpenAI</option>
+                            <option value="groq" data-i18n="msgLLMProvider_groq">Groq</option>
+                            <option value="ollama" data-i18n="msgLLMProvider_ollama">Ollama</option>
+                            <option value="cohere" data-i18n="msgLLMProvider_cohere">Cohere</option>
+                            <option value="mistral" data-i18n="msgLLMProvider_mistral">Mistral AI</option>
+                            <option value="deepseek" data-i18n="msgLLMProvider_deepseek">DeepSeek</option>
+                            <option value="moonshot" data-i18n="msgLLMProvider_moonshot">Moonshot (Kimi)</option>
+                            <option value="zhipu" data-i18n="msgLLMProvider_zhipu">Zhipu AI (GLM)</option>
+                            <option value="baichuan" data-i18n="msgLLMProvider_baichuan">Baichuan AI</option>
+                            <option value="qwen" data-i18n="msgLLMProvider_qwen">Alibaba Qwen</option>
+                            <option value="custom" data-i18n="msgLLMProvider_custom">Custom</option>
+                        </select>
+                        
+                        <p><b data-i18n="lblLLMModel">LLM Model</b></p>
+                        <input type="text" id="llmModel" class="w3-input w3-border w3-round" placeholder="gpt-3.5-turbo">
+                        
+                        <p><b data-i18n="lblLLMApiKey">API Key</b></p>
+                        <input type="password" id="llmApiKey" class="w3-input w3-border w3-round" data-i18n-placeholder="msgLLMApiKeyPlaceholder">
+                        
+                        <p><b data-i18n="lblLLMApiEndpoint">API Endpoint</b></p>
+                        <input type="text" id="llmApiEndpoint" class="w3-input w3-border w3-round" data-i18n-placeholder="msgLLMEndpointPlaceholder">
+                        
+                        <div class="w3-row">
+                            <div class="w3-half">
+                                <p><b data-i18n="lblLLMMaxTokens">Max Tokens</b></p>
+                                <input type="number" id="llmMaxTokens" class="w3-input w3-border w3-round" min="100" max="8000" value="2000">
+                            </div>
+                            <div class="w3-half">
+                                <p><b data-i18n="lblLLMTemperature">Temperature</b></p>
+                                <input type="number" id="llmTemperature" class="w3-input w3-border w3-round" min="0" max="2" step="0.1" value="0.3">
+                            </div>
+                        </div>
+                        
+                        <div class="w3-row">
+                            <div class="w3-half">
+                                <p><b data-i18n="lblLLMTimeout">Timeout (ms)</b></p>
+                                <input type="number" id="llmTimeout" class="w3-input w3-border w3-round" min="5000" max="120000" value="30000">
+                            </div>
+                        </div>
+                        
+                        <p><b data-i18n="lblLLMPromptTemplate">Prompt Template</b></p>
+                        <textarea id="llmPromptTemplate" class="w3-input w3-border w3-round" rows="3" data-i18n-placeholder="msgLLMPromptPlaceholder"></textarea>
+                        <small style="color: #666;">Use {sourceLang}, {targetLang}, and {text} as placeholders</small>
+                    </div>
+                </div>
+                
                 <p><b data-i18n="lblTranslateDynamicallyCreatedContent">Translate dynamically created content</b></p>
                 <select id="translateDynamicallyCreatedContent" class="w3-select w3-margin">
                     <option value="no" data-i18n="msgNo">No</option>
@@ -289,22 +365,6 @@
                     </select>
                 </div>
             </div>
-        </div>
-
-        <div>
-            <div id="donation" class="w3-container">
-                <div class="w3-light-blue w3-padding w3-round">
-                    <p data-i18n="msgThanksForUseExtension">Thank you for using this extension.</p>
-                    <p data-i18n="msgIWillBeGrateful">I will be grateful if you can make a donation.</p>
-                    <a href="https://www.patreon.com/theowenyoung" target="blank"><img src="/icons/patreon.png"
-                            alt="Become a patreon" width="200px"></a>
-                    <p>
-                     <span>ETH:</span> <code>0xe8Da964A97B609E691AAe4ec3e038d40959C3715</code>
-                    </p>
-                    <p>                      <img src="/icons/eth.png" alt="ETH" width="200px"></p>
-                </div>
-            </div>
-
         </div>
     </div>
     <script src="/lib/languages.js"></script>

@@ -1,10 +1,10 @@
 {
     "manifest_version": 3,
     "default_locale": "en",
-    "name": "Immersive Translate",
-    "description": "Let's experience immersive web translation, with bilingual simultaneous display and translation of only the important content.",
-    "version": "0.0.41",
-    "homepage_url": "https://github.com/immersive-translate/immersive-translate",
+    "name": "Web Translator",
+    "description": "Intelligent web page translator powered by AI models (OpenAI, Claude, Qianwen, etc.). Translate with hotkeys and real-time scrolling support.",
+    "version": "0.0.1",
+    "homepage_url": "https://github.com/lengjing/web-translator",
 
     "commands": {
         "hotkey-toggle-translation": {
@@ -46,6 +46,7 @@
     "resources":[    "/icons/icon-32.png",
         "/icons/google-translate-32.png",
         "/icons/yandex-translate-32.png",
+        "/icons/llm-translate-32.png",
         "/icons/swap-32.png",
         "/contentScript/css/*"
         ],

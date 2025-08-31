@@ -9,8 +9,8 @@ const twpConfig = (function () {
    * @typedef {"pageTranslatorService" | "textTranslatorService" | "ttsSpeed" | "enableDeepL" | "targetLanguage" | "targetLanguageTextTranslation" | "targetLanguages" | "alwaysTranslateSites" | "neverTranslateSites" | "sitesToTranslateWhenHovering" | "langsToTranslateWhenHovering" | "alwaysTranslateLangs" | "neverTranslateLangs" | "customDictionary" | "showTranslatePageContextMenu" | "showTranslateSelectedContextMenu" | "showButtonInTheAddressBar" | "showOriginalTextWhenHovering" | "showTranslateSelectedButton" | "showPopupMobile" | "useOldPopup" | "darkMode" | "popupBlueWhenSiteIsTranslated" | "popupPanelSection" | "showReleaseNotes" | "dontShowIfPageLangIsTargetLang" | "dontShowIfPageLangIsUnknown" | "dontShowIfSelectedTextIsTargetLang" | "dontShowIfSelectedTextIsUnknown" | "hotkeys" | "expandPanelTranslateSelectedText" | "translateTag_pre" | "dontSortResults" | "translateDynamicallyCreatedContent" | "autoTranslateWhenClickingALink" | "translateSelectedWhenPressTwice" | "translateTextOverMouseWhenPressTwice" | "translateClickingOnce"} DefaultConfigNames
    */
   const defaultConfig = {
-    pageTranslatorService: "google", // google yandex
-    textTranslatorService: "google", // google yandex bing deepl
+    pageTranslatorService: "google", // google yandex llm
+    textTranslatorService: "google", // google yandex bing deepl llm
     ttsSpeed: 1.0,
     enableDeepL: "yes",
     isTranslateTitle: "no",
@@ -41,6 +41,17 @@ const twpConfig = (function () {
     dontSortResults: "no",
     translateDynamicallyCreatedContent: "yes",
     autoTranslateWhenClickingALink: "no",
+    
+    // LLM Translation Settings
+    enableLLM: "yes",
+    llmProvider: "openai", // openai anthropic azure custom
+    llmModel: "gpt-3.5-turbo", // gpt-3.5-turbo gpt-4 claude-3-sonnet
+    llmApiKey: "",
+    llmApiEndpoint: "https://api.openai.com/v1/chat/completions", // Custom API endpoint
+    llmMaxTokens: 2000,
+    llmTemperature: 0.3,
+    llmPromptTemplate: "Translate the following text from {sourceLang} to {targetLang}. Only return the translated text without any explanation:\n\n{text}",
+    llmTimeout: 30000, // 30 seconds
 
   };
   const config = structuredClone(defaultConfig);

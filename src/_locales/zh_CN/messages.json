@@ -3,7 +3,7 @@
     "message": "翻译网页"
   },
   "extensionDescription": {
-    "message": "使用 Google 或 Yandex 实时翻译您的页面。"
+    "message": "使用 Google、Yandex 或 AI 模型 (LLM) 实时翻译您的页面。"
   },
   "pageActionTitle": {
     "message": "翻译此页面"
@@ -530,15 +530,99 @@
     "message": "特殊页面翻译规则"
   },
   "optionsSpecialRulesNotes":{
-    "message":"这是一个高级选项，请确保你在编辑之前知道自己在做什么！ 这里添加的规则的优先级高于内置的<a href=\"https://github.com/immersive-translate/immersive-translate/blob/main/src/lib/specialRules.js\">规则</a><br>别被吓到，其实也不是很复杂啦，本质上就是一些css选择器，这里有一个<a href=\"https://github.com/immersive-translate/immersive-translate/wiki/Special-Rules-Tutorial\">教程</a>来帮助你。<br>我们最终目标是让这个扩展的默认规则更人性化，所以请考虑将你的规则贡献给<a href=\"https://github.com/immersive-translate/immersive-translate/blob/main/src/lib/specialRules.js\">本项目</a>。"
-  },
-  "lblTelegram":{
-    "message": "加Telegram群"
+    "message":"这是一个高级选项，请确保你在编辑之前知道自己在做什么！ 这里添加的规则的优先级高于内置的<a href=\"https://github.com/web-translator/web-translator/blob/main/src/lib/specialRules.js\">规则</a><br>别被吓到，其实也不是很复杂啦，本质上就是一些css选择器，这里有一个<a href=\"https://github.com/web-translator/web-translator/wiki/Special-Rules-Tutorial\">教程</a>来帮助你。<br>我们最终目标是让这个扩展的默认规则更人性化，所以请考虑将你的规则贡献给<a href=\"https://github.com/web-translator/web-translator/blob/main/src/lib/specialRules.js\">本项目</a>。"
   },
   "msgCommon":{
     "message":"常用配置"
   },
   "optionIsTranslateTitle":{
     "message":"是否翻译页面标题？"
+  },
+  "lblLLMTranslation": {
+    "message": "大语言模型翻译"
+  },
+  "lblEnableLLM": {
+    "message": "启用大语言模型翻译"
+  },
+  "lblLLMProvider": {
+    "message": "LLM 提供商"
+  },
+  "lblLLMModel": {
+    "message": "LLM 模型"
+  },
+  "lblLLMApiKey": {
+    "message": "API 密钥"
+  },
+  "lblLLMApiEndpoint": {
+    "message": "API 端点"
+  },
+  "lblLLMMaxTokens": {
+    "message": "最大 Token 数"
+  },
+  "lblLLMTemperature": {
+    "message": "温度参数"
+  },
+  "lblLLMPromptTemplate": {
+    "message": "提示词模板"
+  },
+  "lblLLMTimeout": {
+    "message": "超时时间 (毫秒)"
+  },
+  "msgLLMProvider_openai": {
+    "message": "OpenAI"
+  },
+  "msgLLMProvider_anthropic": {
+    "message": "Anthropic (Claude)"
+  },
+  "msgLLMProvider_google": {
+    "message": "Google (Gemini)"
+  },
+  "msgLLMProvider_azure": {
+    "message": "Azure OpenAI"
+  },
+  "msgLLMProvider_groq": {
+    "message": "Groq"
+  },
+  "msgLLMProvider_ollama": {
+    "message": "Ollama"
+  },
+  "msgLLMProvider_cohere": {
+    "message": "Cohere"
+  },
+  "msgLLMProvider_mistral": {
+    "message": "Mistral AI"
+  },
+  "msgLLMProvider_deepseek": {
+    "message": "DeepSeek"
+  },
+  "msgLLMProvider_moonshot": {
+    "message": "Moonshot (Kimi)"
+  },
+  "msgLLMProvider_zhipu": {
+    "message": "智谱 AI (GLM)"
+  },
+  "msgLLMProvider_baichuan": {
+    "message": "百川 AI"
+  },
+  "msgLLMProvider_qwen": {
+    "message": "阿里千问"
+  },
+  "msgLLMProvider_custom": {
+    "message": "自定义"
+  },
+  "msgLLMApiKeyPlaceholder": {
+    "message": "请输入您的 API 密钥"
+  },
+  "msgLLMEndpointPlaceholder": {
+    "message": "请输入 API 端点 URL"
+  },
+  "msgLLMPromptPlaceholder": {
+    "message": "将以下文本从 {sourceLang} 翻译成 {targetLang}。只返回翻译后的文本，不要解释：\n\n{text}"
+  },
+  "msgLLMConfigurationHelp": {
+    "message": "配置 LLM 设置以使用 AI 驱动的翻译。需要有效的 API 凭据。"
+  },
+  "lblEnableLLM": {
+    "message": "启用 LLM 翻译"
   }
 }

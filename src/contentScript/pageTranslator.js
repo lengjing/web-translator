@@ -252,6 +252,9 @@ Promise.all([twpConfig.onReady(), getTabUrl()])
                     htmlTagsInlineIgnore.push('PRE')
                 }
                 break
+            case "pageTranslatorService":
+                currentPageTranslatorService = newvalue
+                break
         }
     })
 
@@ -616,43 +619,153 @@ Promise.all([twpConfig.onReady(), getTabUrl()])
         return attributesToTranslate
     }
 
+    // WeakSet to track processed text nodes
+    let processedTextNodes = new WeakSet();
+
     function encapsulateTextNode(node,ctx) {
         const pageSpecialConfig = getPageSpecialConfig(ctx);
         const isShowDualLanguage = twpConfig.get("isShowDualLanguage")==='no'?false:true;
         
-        
-        const fontNode = document.createElement("font")
-        let style = 'vertical-align: inherit;'
-        if (isShowDualLanguage && (!pageSpecialConfig || pageSpecialConfig.style!=="none")) {
-          let customDualStyle = twpConfig.get("customDualStyle");
-          let dualStyle = customDualStyle || twpConfig.get("dualStyle") || 'underline';
-          if(pageSpecialConfig && pageSpecialConfig.style){
-            dualStyle = pageSpecialConfig.style;
-          }
-          if(dualStyle==='underline'){
-            style+='border-bottom: 2px solid #72ECE9;'
-          }else if(dualStyle==='none'){
-            // ignore
-          }else if(dualStyle==="highlight"){
-            style+='background-color: #EAD0B3;padding: 3px 0;'
-          }else if(dualStyle==="weakening"){
-            style+='opacity: 0.4;'
-          }else if(dualStyle==="maskxxxxxxxx"){
-            style+="filter: blur(5px);transition: filter 0.5s ease;"
-            // add class immersive-translate-mask
-            fontNode.classList.add("immersive-translate-mask")
-          }else if(dualStyle){
-            style+=dualStyle;
-          }
+        if (isShowDualLanguage) {
+            // First check: if this node has already been encapsulated to prevent double processing
+            if (node.hasAttribute && node.hasAttribute(enhanceMarkAttributeName)) {
+                return node; // Already processed, return as-is
+            }
+            
+            // Second check: For text nodes (nodeType 3), use WeakSet to track processing
+            if (node.nodeType === 3) {
+                if (processedTextNodes.has(node)) {
+                    return node; // Already processed, return as-is
+                }
+            }
+            
+            // Third check: For element nodes, check data attribute marking it as already processed
+            if (node.nodeType === 1 && node.hasAttribute && node.hasAttribute('data-translation-processed')) {
+                return node; // Already processed, return as-is
+            }
+            
+            // Fourth check: Check if this node already has translation siblings to prevent duplicates
+            const parent = node.parentNode;
+            if (parent) {
+                let sibling = node.nextSibling;
+                while (sibling) {
+                    if (sibling.hasAttribute && sibling.hasAttribute(enhanceMarkAttributeName)) {
+                        return node; // Translation already exists, return original node
+                    }
+                    if (sibling.classList && sibling.classList.contains('web-translator-below-wrapper')) {
+                        return node; // Translation wrapper already exists, return original node
+                    }
+                    sibling = sibling.nextSibling;
+                }
+                
+                // Also check previous siblings for completeness
+                sibling = node.previousSibling;
+                while (sibling) {
+                    if (sibling.hasAttribute && sibling.hasAttribute(enhanceMarkAttributeName)) {
+                        return node; // Translation already exists, return original node
+                    }
+                    if (sibling.classList && sibling.classList.contains('web-translator-below-wrapper')) {
+                        return node; // Translation wrapper already exists, return original node
+                    }
+                    sibling = sibling.previousSibling;
+                }
+            }
+            
+            // Fifth check: For text nodes, check if parent element has been marked as having translated children
+            if (node.nodeType === 3 && parent && parent.hasAttribute && parent.hasAttribute('data-has-translated-children')) {
+                return node; // Parent already has translated children, return original node
+            }
+            
+            // Mark the node as processed to prevent future re-processing
+            if (node.nodeType === 3) {
+                // For text nodes, add to WeakSet and mark parent
+                processedTextNodes.add(node);
+                if (parent && parent.setAttribute) {
+                    parent.setAttribute('data-has-translated-children', 'true');
+                }
+            } else if (node.nodeType === 1 && node.setAttribute) {
+                // For element nodes, use data attribute
+                node.setAttribute('data-translation-processed', 'true');
+            }
+            
+            // For dual-language mode: create a translation node below the original
+            const fontNode = document.createElement("font")
+            let style = 'vertical-align: inherit;'
+            if (pageSpecialConfig && pageSpecialConfig.style !== "none") {
+                let customDualStyle = twpConfig.get("customDualStyle");
+                let dualStyle = customDualStyle || twpConfig.get("dualStyle") || 'underline';
+                if(pageSpecialConfig && pageSpecialConfig.style){
+                    dualStyle = pageSpecialConfig.style;
+                }
+                if(dualStyle==='underline'){
+                    style+='border-bottom: 2px solid #72ECE9;'
+                }else if(dualStyle==='none'){
+                    // ignore
+                }else if(dualStyle==="highlight"){
+                    style+='background-color: #EAD0B3;padding: 3px 0;'
+                }else if(dualStyle==="weakening"){
+                    style+='opacity: 0.4;'
+                }else if(dualStyle==="maskxxxxxxxx"){
+                    style+="filter: blur(5px);transition: filter 0.5s ease;"
+                    // add class web-translator-mask
+                    fontNode.classList.add("web-translator-mask")
+                }else if(dualStyle){
+                    style+=dualStyle;
+                }
+            }
+            fontNode.setAttribute("style", style)
+            fontNode.textContent = node.textContent
+            
+            // Create wrapper to ensure proper below positioning
+            const translationWrapper = document.createElement("div");
+            translationWrapper.className = "web-translator-below-wrapper";
+            translationWrapper.style.cssText = `
+                display: block !important;
+                width: 100% !important;
+                position: relative !important;
+                clear: both !important;
+                float: none !important;
+                margin: 2px 0 0 0 !important;
+                padding: 0 !important;
+                order: 999 !important;
+                z-index: auto !important;
+                box-sizing: border-box !important;
+            `;
+            
+            // Add translation attributes
+            fontNode.setAttribute(enhanceMarkAttributeName, "copiedNode");
+            fontNode.classList.add("notranslate");
+            fontNode.style.display = "none"; // Initially hidden, will be shown by showCopyiedNodes
+            
+            translationWrapper.appendChild(fontNode);
+            
+            // Insert translation wrapper after the original node
+            if (parent) {
+                // Find insertion point after original node
+                let insertionPoint = node.nextSibling;
+                while (insertionPoint && insertionPoint.hasAttribute && insertionPoint.hasAttribute(enhanceMarkAttributeName)) {
+                    insertionPoint = insertionPoint.nextSibling;
+                }
+                
+                if (insertionPoint) {
+                    parent.insertBefore(translationWrapper, insertionPoint);
+                } else {
+                    parent.appendChild(translationWrapper);
+                }
+            }
+            
+            return fontNode;
+        } else {
+            // For single-language mode: replace the original node
+            const fontNode = document.createElement("font")
+            let style = 'vertical-align: inherit;'
+            fontNode.setAttribute("style", style)
+            fontNode.textContent = node.textContent
+            
+            node.replaceWith(fontNode)
+            
+            return fontNode;
         }
-        fontNode.setAttribute("style", style)
-        // fontNode.setAttribute("_mstmutation", "1")
-        // add class name 
-        fontNode.textContent = node.textContent
-
-        node.replaceWith(fontNode)
-
-        return fontNode
     }
 
     async function translateResults(piecesToTranslateNow, results,ctx) {
@@ -667,6 +780,24 @@ Promise.all([twpConfig.onReady(), getTabUrl()])
                         if (piecesToTranslateNow[i].nodes.length - 1 === j && results[i].length > j) {
                             const restResults = results[i].slice(j + 1);
                             translated += restResults.join(" ");
+                        }
+
+                        // Double-check: Before processing, ensure this node hasn't been processed already
+                        const currentNode = nodes[j];
+                        
+                        // Skip if node is already a translation font node
+                        if (currentNode.hasAttribute && currentNode.hasAttribute(enhanceMarkAttributeName)) {
+                            continue;
+                        }
+                        
+                        // Skip if node is a text node that's already been processed
+                        if (currentNode.nodeType === 3 && processedTextNodes.has(currentNode)) {
+                            continue;
+                        }
+                        
+                        // Skip if element node is already marked as processed
+                        if (currentNode.nodeType === 1 && currentNode.hasAttribute && currentNode.hasAttribute('data-translation-processed')) {
+                            continue;
                         }
 
                         nodes[j] = encapsulateTextNode(nodes[j],ctx)
@@ -688,6 +819,24 @@ Promise.all([twpConfig.onReady(), getTabUrl()])
                     if (results[i][j]) {
                         const nodes = piecesToTranslateNow[i].nodes
                         const translated = results[i][j] + " "
+
+                        // Double-check: Before processing, ensure this node hasn't been processed already
+                        const currentNode = nodes[j];
+                        
+                        // Skip if node is already a translation font node
+                        if (currentNode.hasAttribute && currentNode.hasAttribute(enhanceMarkAttributeName)) {
+                            continue;
+                        }
+                        
+                        // Skip if node is a text node that's already been processed
+                        if (currentNode.nodeType === 3 && processedTextNodes.has(currentNode)) {
+                            continue;
+                        }
+                        
+                        // Skip if element node is already marked as processed
+                        if (currentNode.nodeType === 1 && currentNode.hasAttribute && currentNode.hasAttribute('data-translation-processed')) {
+                            continue;
+                        }
 
                         nodes[j] = encapsulateTextNode(nodes[j],ctx)
 
@@ -903,6 +1052,25 @@ Promise.all([twpConfig.onReady(), getTabUrl()])
         originalPageTitle = null
         // remove copyied nodes
         removeCopyiedNodes();
+        
+        // Clean up data-translation-processed attributes
+        const processedNodes = document.querySelectorAll('[data-translation-processed="true"]');
+        processedNodes.forEach(node => {
+            if (node.nodeType === 1 && node.removeAttribute) {
+                node.removeAttribute('data-translation-processed');
+            }
+        });
+        
+        // Clean up data-has-translated-children attributes
+        const parentNodes = document.querySelectorAll('[data-has-translated-children="true"]');
+        parentNodes.forEach(node => {
+            if (node.nodeType === 1 && node.removeAttribute) {
+                node.removeAttribute('data-has-translated-children');
+            }
+        });
+        
+        // Clear the WeakSet for text nodes by creating a new one
+        processedTextNodes = new WeakSet();
 
 
         for (const ntr of nodesToRestore) {
@@ -919,16 +1087,72 @@ Promise.all([twpConfig.onReady(), getTabUrl()])
         attributesToTranslate = []
     }
 
+    /**
+     * Swaps the translation service following the standard rotation pattern:
+     * Google → Yandex → LLM → Google
+     * Implements the Translation Service Integration specification with enhanced error handling
+     */
     pageTranslator.swapTranslationService = function () {
-        if (currentPageTranslatorService === "google") {
-            currentPageTranslatorService = "yandex"
-        } else {
-            currentPageTranslatorService = "google"
+        try {
+            // Service rotation configuration
+            const serviceRotation = {
+                "google": "yandex",
+                "yandex": "llm", 
+                "llm": "google"
+            };
+            
+            // Validate current service and get next service in rotation
+            const nextService = serviceRotation[currentPageTranslatorService] || "google";
+            
+            // Log service change for debugging
+            console.log(`[Web Translator] Service switching: ${currentPageTranslatorService} → ${nextService}`);
+            
+            // Update current service
+            const previousService = currentPageTranslatorService;
+            currentPageTranslatorService = nextService;
+            
+            // Save the new service to configuration with error handling
+            try {
+                twpConfig.set("pageTranslatorService", currentPageTranslatorService);
+            } catch (configError) {
+                console.error('[Web Translator] Failed to save service config:', configError);
+                // Rollback on config save failure
+                currentPageTranslatorService = previousService;
+                return;
+            }
+            
+            // Re-translate page if currently translated
+            if (pageLanguageState === "translated") {
+                try {
+                    pageTranslator.translatePage();
+                } catch (translationError) {
+                    console.error('[Web Translator] Failed to re-translate with new service:', translationError);
+                    // Don't rollback service change as the switch was successful
+                    // User can manually retry translation
+                }
+            }
+            
+            // Notify other components about service change
+            chrome.runtime.sendMessage({
+                action: "serviceChanged",
+                newService: currentPageTranslatorService,
+                previousService: previousService
+            }, () => {
+                // Ignore response, this is just a notification
+                if (chrome.runtime.lastError) {
+                    // Silent ignore - service change was successful even if notification failed
+                }
+            });
+            
+        } catch (error) {
+            console.error('[Web Translator] Critical error in service switching:', error);
+            // Ensure we have a valid service even if switching fails
+            if (!currentPageTranslatorService || !["google", "yandex", "llm"].includes(currentPageTranslatorService)) {
+                currentPageTranslatorService = "google";
+                twpConfig.set("pageTranslatorService", currentPageTranslatorService);
+            }
         }
-        if (pageLanguageState === "translated") {
-            pageTranslator.translatePage()
-        }
-    }
+    };
 
     let alreadyGotTheLanguage = false
     const observers = []
@@ -941,119 +1165,210 @@ Promise.all([twpConfig.onReady(), getTabUrl()])
         }
     }
 
+    /**
+     * Message listener for handling translation-related actions
+     * Implements proper action routing with clear separation of concerns
+     */
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        if (request.action === "translatePage") {
-            if (request.targetLanguage === "original") {
-                pageTranslator.restorePage()
-            } else {
-                pageTranslator.translatePage(request.targetLanguage)
+        const { action } = request;
+        
+        // Define action handlers for better maintainability
+        const actionHandlers = {
+            "translatePage": () => {
+                if (request.targetLanguage === "original") {
+                    pageTranslator.restorePage();
+                } else {
+                    pageTranslator.translatePage(request.targetLanguage);
+                }
+            },
+            
+            "restorePage": () => {
+                pageTranslator.restorePage();
+            },
+            
+            "getOriginalTabLanguage": () => {
+                pageTranslator.onGetOriginalTabLanguage(() => {
+                    sendResponse(originalTabLanguage);
+                });
+                return true; // Keep message channel open for async response
+            },
+            
+            "getCurrentPageLanguage": () => {
+                sendResponse(currentPageLanguage);
+            },
+            
+            "getCurrentPageLanguageState": () => {
+                sendResponse(pageLanguageState);
+            },
+            
+            "getCurrentPageTranslatorService": () => {
+                sendResponse(currentPageTranslatorService);
+            },
+            
+            "swapTranslationService": () => {
+                pageTranslator.swapTranslationService();
+            },
+            
+            "toggle-translation": () => {
+                if (pageLanguageState === "translated") {
+                    pageTranslator.restorePage();
+                } else {
+                    pageTranslator.translatePage();
+                }
+            },
+            
+            "autoTranslateBecauseClickedALink": () => {
+                if (twpConfig.get("autoTranslateWhenClickingALink") === "yes") {
+                    pageTranslator.onGetOriginalTabLanguage(() => {
+                        const shouldAutoTranslate = (
+                            pageLanguageState === "original" && 
+                            originalTabLanguage !== currentTargetLanguage && 
+                            twpConfig.get("neverTranslateLangs").indexOf(originalTabLanguage) === -1
+                        );
+                        
+                        if (shouldAutoTranslate) {
+                            pageTranslator.translatePage();
+                        }
+                    });
+                }
             }
-        } else if (request.action === "restorePage") {
-            pageTranslator.restorePage()
-        } else if (request.action === "getOriginalTabLanguage") {
-            pageTranslator.onGetOriginalTabLanguage(function () {
-                sendResponse(originalTabLanguage)
-            })
-            return true
-        } else if (request.action === "getCurrentPageLanguage") {
-            sendResponse(currentPageLanguage)
-        } else if (request.action === "getCurrentPageLanguageState") {
-            sendResponse(pageLanguageState)
-        } else if (request.action === "getCurrentPageTranslatorService") {
-            sendResponse(currentPageTranslatorService)
-        } else if (request.action === "swapTranslationService") {
-            pageTranslator.swapTranslationService()
-        } else if (request.action === "toggle-translation") {
-
-            if (pageLanguageState === "translated") {
-                pageTranslator.restorePage()
-            } else {
-                pageTranslator.translatePage()
-            }
-        } else if (request.action === "autoTranslateBecauseClickedALink") {
-            if (twpConfig.get("autoTranslateWhenClickingALink") === "yes") {
-                pageTranslator.onGetOriginalTabLanguage(function () {
-                    if (pageLanguageState === "original" && originalTabLanguage !== currentTargetLanguage && twpConfig.get("neverTranslateLangs").indexOf(originalTabLanguage) === -1) {
-                        pageTranslator.translatePage()
-                    }
-                })
-            }
+        };
+        
+        // Execute handler if it exists
+        const handler = actionHandlers[action];
+        if (handler) {
+            return handler();
         }
-    })
+    });
 
-    // Requests the detection of the tab language in the background
-    if (window.self === window.top) { // is main frame
-        const onTabVisible = function () {
+    /**
+     * Enhanced language detection and auto-translation logic
+     * Implements proper error handling and code organization
+     */
+    if (window.self === window.top) { // Main frame handling
+        const initializeLanguageDetection = () => {
             chrome.runtime.sendMessage({
                 action: "detectTabLanguage"
-            },async  result => {
-                // if und, manual check
-                
-                if(result === 'und' || !result){
-                    result = await detectPageLanguage()
-                }              
-                result = result || "und"
-
-
-                if (result === "und") {
-                    originalTabLanguage = result
-                }
-
-                if (twpConfig.get("alwaysTranslateSites").indexOf(tabHostName) !== -1) {
-                    pageTranslator.translatePage()
-                }else if(result!=='und'){
-                    const langCode = twpLang.fixTLanguageCode(result)
-                    if (langCode) {
-                        originalTabLanguage = langCode
+            }, async (result) => {
+                try {
+                    // Fallback to manual detection if result is undefined or 'und'
+                    if (result === 'und' || !result) {
+                        result = await detectPageLanguage();
                     }
-                    if (location.hostname === "translatewebpages.org" && location.href.indexOf("?autotranslate") !== -1 && twpConfig.get("neverTranslateSites").indexOf(tabHostName) === -1) {
-                        pageTranslator.translatePage()
+                    result = result || "und";
+
+                    // Set original language
+                    if (result === "und") {
+                        originalTabLanguage = result;
                     } else {
-                        if (location.hostname !== "translate.googleusercontent.com" && location.hostname !== "translate.google.com" && location.hostname !== "translate.yandex.com") {
-                            if (pageLanguageState === "original" && !chrome.extension.inIncognitoContext) {
-                                if (twpConfig.get("neverTranslateSites").indexOf(tabHostName) === -1) {
-                                    if (langCode && langCode !== currentTargetLanguage && twpConfig.get("alwaysTranslateLangs").indexOf(langCode) !== -1) {
-                                        pageTranslator.translatePage()
-                                    } 
-                                }
-                            }
+                        const langCode = twpLang.fixTLanguageCode(result);
+                        if (langCode) {
+                            originalTabLanguage = langCode;
                         }
                     }
-                }
 
-                observers.forEach(callback => callback(originalTabLanguage))
-                alreadyGotTheLanguage = true
-            })
-        }
-        setTimeout(function () {
-            if (document.visibilityState == "visible") {
-                onTabVisible()
-            } else {
-                const handleVisibilityChange = function () {
-                    if (document.visibilityState == "visible") {
-                        document.removeEventListener("visibilitychange", handleVisibilityChange)
-                        onTabVisible()
-                    }
+                    // Handle auto-translation scenarios
+                    await handleAutoTranslation(result);
+
+                    // Notify observers and mark as ready
+                    observers.forEach(callback => callback(originalTabLanguage));
+                    alreadyGotTheLanguage = true;
+                } catch (error) {
+                    console.error('Language detection failed:', error);
+                    originalTabLanguage = "und";
+                    observers.forEach(callback => callback(originalTabLanguage));
+                    alreadyGotTheLanguage = true;
                 }
-                document.addEventListener("visibilitychange", handleVisibilityChange, false)
+            });
+        };
+
+        const handleAutoTranslation = async (detectedLanguage) => {
+            const isAlwaysTranslateSite = twpConfig.get("alwaysTranslateSites").indexOf(tabHostName) !== -1;
+            
+            if (isAlwaysTranslateSite) {
+                pageTranslator.translatePage();
+                return;
             }
-        }, 120)
-    } else { // is subframe (iframe)
+
+            if (detectedLanguage === 'und') {
+                return; // Skip auto-translation for unknown languages
+            }
+
+            const langCode = twpLang.fixTLanguageCode(detectedLanguage);
+            if (!langCode) {
+                return;
+            }
+
+            // Check for special auto-translate scenarios
+            const isSpecialTranslatePage = (
+                location.hostname === "translatewebpages.org" && 
+                location.href.indexOf("?autotranslate") !== -1 && 
+                twpConfig.get("neverTranslateSites").indexOf(tabHostName) === -1
+            );
+
+            if (isSpecialTranslatePage) {
+                pageTranslator.translatePage();
+                return;
+            }
+
+            // Check for excluded translation sites
+            const excludedHosts = [
+                "translate.googleusercontent.com",
+                "translate.google.com", 
+                "translate.yandex.com"
+            ];
+
+            if (excludedHosts.includes(location.hostname)) {
+                return;
+            }
+
+            // Auto-translate for preferred languages
+            const shouldAutoTranslate = (
+                pageLanguageState === "original" &&
+                !chrome.extension.inIncognitoContext &&
+                twpConfig.get("neverTranslateSites").indexOf(tabHostName) === -1 &&
+                langCode &&
+                langCode !== currentTargetLanguage &&
+                twpConfig.get("alwaysTranslateLangs").indexOf(langCode) !== -1
+            );
+
+            if (shouldAutoTranslate) {
+                pageTranslator.translatePage();
+            }
+        };
+
+        // Initialize with proper timing
+        setTimeout(() => {
+            if (document.visibilityState === "visible") {
+                initializeLanguageDetection();
+            } else {
+                const handleVisibilityChange = () => {
+                    if (document.visibilityState === "visible") {
+                        document.removeEventListener("visibilitychange", handleVisibilityChange);
+                        initializeLanguageDetection();
+                    }
+                };
+                document.addEventListener("visibilitychange", handleVisibilityChange, false);
+            }
+        }, 120);
+        
+    } else { 
+        // Subframe (iframe) handling
         chrome.runtime.sendMessage({
             action: "getMainFrameTabLanguage"
-        }, result => {
-            originalTabLanguage = result || "und"
-            observers.forEach(callback => callback(originalTabLanguage))
-            alreadyGotTheLanguage = true
-        })
+        }, (result) => {
+            originalTabLanguage = result || "und";
+            observers.forEach(callback => callback(originalTabLanguage));
+            alreadyGotTheLanguage = true;
+        });
 
         chrome.runtime.sendMessage({
             action: "getMainFramePageLanguageState"
-        }, result => {
+        }, (result) => {
             if (result === "translated" && pageLanguageState === "original") {
-                pageTranslator.translatePage()
+                pageTranslator.translatePage();
             }
-        })
+        });
     }
 })
 

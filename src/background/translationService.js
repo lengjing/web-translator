@@ -1076,6 +1076,432 @@ const translationService = (function () {
     }
   })();
 
+  /**
+   * LLM Translation Service - supports OpenAI, Anthropic, Azure, and custom endpoints
+   */
+  const llmService = new (class {
+    constructor() {
+      this.name = "llm";
+    }
+
+    /**
+     * Get language codes in LLM-friendly format
+     * @param {string} langCode
+     * @returns {string}
+     */
+    formatLanguageForLLM(langCode) {
+      const languageMap = {
+        'en': 'English',
+        'zh-CN': 'Chinese (Simplified)',
+        'zh-TW': 'Chinese (Traditional)',
+        'es': 'Spanish',
+        'fr': 'French',
+        'de': 'German',
+        'ja': 'Japanese',
+        'ko': 'Korean',
+        'ru': 'Russian',
+        'pt': 'Portuguese',
+        'it': 'Italian',
+        'ar': 'Arabic',
+        'hi': 'Hindi',
+        'th': 'Thai',
+        'vi': 'Vietnamese',
+        'nl': 'Dutch',
+        'pl': 'Polish',
+        'tr': 'Turkish',
+        'sv': 'Swedish',
+        'da': 'Danish',
+        'no': 'Norwegian',
+        'fi': 'Finnish',
+        'cs': 'Czech',
+        'hu': 'Hungarian',
+        'ro': 'Romanian',
+        'bg': 'Bulgarian',
+        'hr': 'Croatian',
+        'sr': 'Serbian',
+        'sk': 'Slovak',
+        'sl': 'Slovenian',
+        'et': 'Estonian',
+        'lv': 'Latvian',
+        'lt': 'Lithuanian',
+        'uk': 'Ukrainian',
+        'be': 'Belarusian',
+        'mk': 'Macedonian',
+        'mt': 'Maltese',
+        'is': 'Icelandic',
+        'ga': 'Irish',
+        'cy': 'Welsh',
+        'eu': 'Basque',
+        'ca': 'Catalan',
+        'gl': 'Galician',
+        'auto': 'auto-detect'
+      };
+      return languageMap[langCode] || langCode;
+    }
+
+    /**
+     * Create the prompt for LLM translation
+     * @param {string} text
+     * @param {string} sourceLang
+     * @param {string} targetLang
+     * @returns {string}
+     */
+    createTranslationPrompt(text, sourceLang, targetLang) {
+      const template = twpConfig.get('llmPromptTemplate');
+      const sourceLanguage = this.formatLanguageForLLM(sourceLang);
+      const targetLanguage = this.formatLanguageForLLM(targetLang);
+      
+      return template
+        .replace('{sourceLang}', sourceLanguage)
+        .replace('{targetLang}', targetLanguage)
+        .replace('{text}', text);
+    }
+
+    /**
+     * Make API request based on provider
+     * @param {string} prompt
+     * @returns {Promise<string>}
+     */
+    async makeApiRequest(prompt) {
+      const provider = twpConfig.get('llmProvider');
+      const apiKey = twpConfig.get('llmApiKey');
+      const endpoint = twpConfig.get('llmApiEndpoint');
+      const model = twpConfig.get('llmModel');
+      const maxTokens = twpConfig.get('llmMaxTokens');
+      const temperature = twpConfig.get('llmTemperature');
+      const timeout = twpConfig.get('llmTimeout');
+
+      if (!apiKey) {
+        throw new Error('LLM API key not configured');
+      }
+
+      let requestBody;
+      let headers = {
+        'Content-Type': 'application/json'
+      };
+
+      // Configure request based on provider
+      switch (provider) {
+        case 'openai':
+          headers['Authorization'] = `Bearer ${apiKey}`;
+          requestBody = {
+            model: model,
+            messages: [{
+              role: 'user',
+              content: prompt
+            }],
+            max_tokens: maxTokens,
+            temperature: temperature
+          };
+          break;
+
+        case 'anthropic':
+          headers['Authorization'] = `Bearer ${apiKey}`;
+          headers['anthropic-version'] = '2023-06-01';
+          requestBody = {
+            model: model,
+            max_tokens: maxTokens,
+            temperature: temperature,
+            messages: [{
+              role: 'user',
+              content: prompt
+            }]
+          };
+          break;
+
+        case 'azure':
+          headers['api-key'] = apiKey;
+          requestBody = {
+            messages: [{
+              role: 'user',
+              content: prompt
+            }],
+            max_tokens: maxTokens,
+            temperature: temperature
+          };
+          break;
+
+        case 'google':
+          headers['Authorization'] = `Bearer ${apiKey}`;
+          requestBody = {
+            contents: [{
+              parts: [{
+                text: prompt
+              }]
+            }],
+            generationConfig: {
+              maxOutputTokens: maxTokens,
+              temperature: temperature
+            }
+          };
+          break;
+
+        case 'groq':
+          headers['Authorization'] = `Bearer ${apiKey}`;
+          requestBody = {
+            model: model,
+            messages: [{
+              role: 'user',
+              content: prompt
+            }],
+            max_tokens: maxTokens,
+            temperature: temperature
+          };
+          break;
+
+        case 'ollama':
+          // Ollama typically doesn't require authorization for local installs
+          requestBody = {
+            model: model,
+            prompt: prompt,
+            options: {
+              num_predict: maxTokens,
+              temperature: temperature
+            },
+            stream: false
+          };
+          break;
+
+        case 'cohere':
+          headers['Authorization'] = `Bearer ${apiKey}`;
+          requestBody = {
+            model: model,
+            message: prompt,
+            max_tokens: maxTokens,
+            temperature: temperature
+          };
+          break;
+
+        case 'mistral':
+          headers['Authorization'] = `Bearer ${apiKey}`;
+          requestBody = {
+            model: model,
+            messages: [{
+              role: 'user',
+              content: prompt
+            }],
+            max_tokens: maxTokens,
+            temperature: temperature
+          };
+          break;
+
+        case 'deepseek':
+          headers['Authorization'] = `Bearer ${apiKey}`;
+          requestBody = {
+            model: model,
+            messages: [{
+              role: 'user',
+              content: prompt
+            }],
+            max_tokens: maxTokens,
+            temperature: temperature
+          };
+          break;
+
+        case 'moonshot':
+          headers['Authorization'] = `Bearer ${apiKey}`;
+          requestBody = {
+            model: model,
+            messages: [{
+              role: 'user',
+              content: prompt
+            }],
+            max_tokens: maxTokens,
+            temperature: temperature
+          };
+          break;
+
+        case 'zhipu':
+          headers['Authorization'] = `Bearer ${apiKey}`;
+          requestBody = {
+            model: model,
+            messages: [{
+              role: 'user',
+              content: prompt
+            }],
+            max_tokens: maxTokens,
+            temperature: temperature
+          };
+          break;
+
+        case 'baichuan':
+          headers['Authorization'] = `Bearer ${apiKey}`;
+          requestBody = {
+            model: model,
+            messages: [{
+              role: 'user',
+              content: prompt
+            }],
+            max_tokens: maxTokens,
+            temperature: temperature
+          };
+          break;
+
+        case 'qwen':
+          headers['Authorization'] = `Bearer ${apiKey}`;
+          headers['Content-Type'] = 'application/json';
+          requestBody = {
+            model: model,
+            input: {
+              messages: [{
+                role: 'user',
+                content: prompt
+              }]
+            },
+            parameters: {
+              max_tokens: maxTokens,
+              temperature: temperature,
+              result_format: 'message'
+            }
+          };
+          break;
+
+        case 'custom':
+        default:
+          headers['Authorization'] = `Bearer ${apiKey}`;
+          requestBody = {
+            model: model,
+            messages: [{
+              role: 'user',
+              content: prompt
+            }],
+            max_tokens: maxTokens,
+            temperature: temperature
+          };
+          break;
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(requestBody),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`LLM API error: ${response.status} - ${errorText}`);
+        }
+
+        const data = await response.json();
+        
+        // Extract response based on provider
+        switch (provider) {
+          case 'openai':
+          case 'groq':
+          case 'mistral':
+          case 'deepseek':
+          case 'moonshot':
+          case 'zhipu':
+          case 'baichuan':
+          case 'custom':
+            return data.choices?.[0]?.message?.content || '';
+          
+          case 'anthropic':
+            return data.content?.[0]?.text || '';
+          
+          case 'azure':
+            return data.choices?.[0]?.message?.content || '';
+          
+          case 'google':
+            return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          
+          case 'ollama':
+            return data.response || '';
+          
+          case 'cohere':
+            return data.text || '';
+          
+          case 'qwen':
+            return data.output?.choices?.[0]?.message?.content || '';
+          
+          default:
+            return data.choices?.[0]?.message?.content || data.content?.[0]?.text || data.response || data.text || data.output?.choices?.[0]?.message?.content || '';
+        }
+      } catch (error) {
+        clearTimeout(timeoutId);
+        throw error;
+      }
+    }
+
+    /**
+     * Translate text using LLM
+     * @param {string} sourceLanguage
+     * @param {string} targetLanguage
+     * @param {Array<string[]>} sourceArray2d
+     * @param {boolean} dontSaveInPersistentCache
+     * @param {boolean} dontSortResults
+     * @returns {Promise<string[][]>}
+     */
+    async translate(
+      sourceLanguage,
+      targetLanguage,
+      sourceArray2d,
+      dontSaveInPersistentCache = false,
+      dontSortResults = false
+    ) {
+      if (!twpConfig.get('enableLLM') || twpConfig.get('enableLLM') === 'no') {
+        throw new Error('LLM translation is disabled');
+      }
+
+      const results = [];
+      
+      for (const sourceArray of sourceArray2d) {
+        const resultArray = [];
+        
+        for (const text of sourceArray) {
+          if (!text || text.trim() === '') {
+            resultArray.push('');
+            continue;
+          }
+
+          try {
+            // Check cache first if not disabled
+            if (!dontSaveInPersistentCache) {
+              const cachedResult = await translationCache.get('llm', sourceLanguage, targetLanguage, text);
+              if (cachedResult && cachedResult.translatedText) {
+                resultArray.push(cachedResult.translatedText);
+                continue;
+              }
+            }
+
+            // Create prompt and make API request
+            const prompt = this.createTranslationPrompt(text, sourceLanguage, targetLanguage);
+            const translatedText = await this.makeApiRequest(prompt);
+            
+            // Clean up the response (remove extra whitespace, quotes, etc.)
+            const cleanedText = translatedText.trim().replace(/^["'`]|["'`]$/g, '');
+            
+            resultArray.push(cleanedText);
+
+            // Cache the result if not disabled
+            if (!dontSaveInPersistentCache) {
+              await translationCache.set('llm', sourceLanguage, targetLanguage, text, cleanedText, 'auto');
+            }
+
+            // Add small delay to avoid rate limiting
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+          } catch (error) {
+            console.error('LLM translation error:', error);
+            // Return original text if translation fails
+            resultArray.push(text);
+          }
+        }
+        
+        results.push(resultArray);
+      }
+      
+      return results;
+    }
+  })();
+
   /** @type {Map<string, Service>} */
   const serviceList = new Map();
 
@@ -1085,6 +1511,10 @@ const translationService = (function () {
   serviceList.set(
     "deepl",
     /** @type {Service} */ /** @type {?} */ (deeplService)
+  );
+  serviceList.set(
+    "llm",
+    /** @type {Service} */ /** @type {?} */ (llmService)
   );
 
   translationService.translateHTML = async (

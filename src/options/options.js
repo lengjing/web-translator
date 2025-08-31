@@ -24,7 +24,7 @@ twpConfig.onReady(function () {
 
     function hashchange() {
         const hash = location.hash || "#main"
-        const divs = [$("#main"),  $("#translations"),  $("#hotkeys"), $("#storage"), $("#others"), $("#donation"), ]
+        const divs = [$("#main"),  $("#translations"),  $("#hotkeys"), $("#storage"), $("#others")]
         divs.forEach(element => {
             element.style.display = "none"
         })
@@ -36,12 +36,7 @@ twpConfig.onReady(function () {
         $(hash).style.display = "block"
         $('a[href="' + hash + '"]').classList.add("w3-light-grey")
 
-        let text
-        if (hash === "#donation") {
-            text = chrome.i18n.getMessage("lblMakeDonation")
-        }else {
-            text = chrome.i18n.getMessage("lblSettings")
-        }
+        const text = chrome.i18n.getMessage("lblSettings")
         $("#itemSelectedName").textContent = text
 
         if (sideBarIsVisible) {
@@ -49,8 +44,6 @@ twpConfig.onReady(function () {
             $("#sideBar").style.display = "none"
             sideBarIsVisible = false
         }
-
-        $("#btnPatreon").style.display = "block"
     }
     hashchange()
     window.addEventListener("hashchange", hashchange)
@@ -409,21 +402,236 @@ twpConfig.onReady(function () {
 
     $("#addToCustomDictionary").onclick = e => {
         let keyWord = prompt("Enter the keyWord, Minimum two letters ", "")
+        if (!keyWord) return; // Handle cancel or empty input
         keyWord = keyWord.trim().toLowerCase()
         if (!keyWord || keyWord.length < 2) return
         let customValue = prompt("(Optional)\nYou can enter a value to replace it , or fill in nothing.", "")
-        if (!customValue) customValue = ''
-        customValue = customValue.trim()
+        if (customValue === null) customValue = ''; // Handle cancel
+        if (customValue) customValue = customValue.trim()
         const li = createcustomDictionary(keyWord,customValue)
         $("#customDictionary").appendChild(li)
         twpConfig.addKeyWordTocustomDictionary(keyWord,customValue)
     }
 
-    // translations options
+    // Enhanced translation service configuration with validation
     $("#pageTranslatorService").onchange = e => {
-        twpConfig.set("pageTranslatorService", e.target.value)
+        const selectedService = e.target.value;
+        
+        // Validate service selection
+        const validServices = ["google", "yandex", "llm"];
+        if (!validServices.includes(selectedService)) {
+            console.warn(`[Web Translator] Invalid service selected: ${selectedService}`);
+            e.target.value = "google"; // Reset to default
+            return;
+        }
+        
+        try {
+            twpConfig.set("pageTranslatorService", selectedService);
+            toggleLLMConfigSection();
+            
+            // Log service change for debugging
+            console.log(`[Web Translator] Page translator service changed to: ${selectedService}`);
+        } catch (error) {
+            console.error('[Web Translator] Failed to save page translator service:', error);
+            // Reset to previous value
+            e.target.value = twpConfig.get("pageTranslatorService");
+        }
+    };
+    $("#pageTranslatorService").value = twpConfig.get("pageTranslatorService");
+
+    $("#textTranslatorService").onchange = e => {
+        const selectedService = e.target.value;
+        
+        // Validate service selection
+        const validServices = ["google", "yandex", "bing", "deepl", "llm"];
+        if (!validServices.includes(selectedService)) {
+            console.warn(`[Web Translator] Invalid text service selected: ${selectedService}`);
+            e.target.value = "google"; // Reset to default
+            return;
+        }
+        
+        try {
+            twpConfig.set("textTranslatorService", selectedService);
+            toggleLLMConfigSection();
+            
+            // Log service change for debugging
+            console.log(`[Web Translator] Text translator service changed to: ${selectedService}`);
+        } catch (error) {
+            console.error('[Web Translator] Failed to save text translator service:', error);
+            // Reset to previous value
+            e.target.value = twpConfig.get("textTranslatorService");
+        }
+    };
+    $("#textTranslatorService").value = twpConfig.get("textTranslatorService");
+
+    /**
+     * Enhanced LLM Configuration Section Toggle
+     * Shows/hides LLM configuration based on service selection with error handling
+     */
+    function toggleLLMConfigSection() {
+        try {
+            const pageService = $("#pageTranslatorService").value;
+            const textService = $("#textTranslatorService").value;
+            const llmSection = $("#llmConfigSection");
+            
+            if (!llmSection) {
+                console.warn('[Web Translator] LLM config section element not found');
+                return;
+            }
+            
+            // Show LLM section if either service uses LLM
+            const shouldShowLLM = pageService === "llm" || textService === "llm";
+            llmSection.style.display = shouldShowLLM ? "block" : "none";
+            
+            // Log visibility change for debugging
+            console.log(`[Web Translator] LLM config section ${shouldShowLLM ? 'shown' : 'hidden'} (page: ${pageService}, text: ${textService})`);
+            
+        } catch (error) {
+            console.error('[Web Translator] Error toggling LLM config section:', error);
+        }
     }
-    $("#pageTranslatorService").value = twpConfig.get("pageTranslatorService")
+
+    // LLM Settings handlers
+    $("#enableLLM").onchange = e => {
+        twpConfig.set("enableLLM", e.target.value)
+    }
+    $("#enableLLM").value = twpConfig.get("enableLLM")
+
+    $("#llmProvider").onchange = e => {
+        twpConfig.set("llmProvider", e.target.value)
+        updateLLMProviderDefaults()
+    }
+    $("#llmProvider").value = twpConfig.get("llmProvider")
+
+    $("#llmModel").oninput = e => {
+        twpConfig.set("llmModel", e.target.value)
+    }
+    $("#llmModel").value = twpConfig.get("llmModel")
+
+    $("#llmApiKey").oninput = e => {
+        twpConfig.set("llmApiKey", e.target.value)
+    }
+    $("#llmApiKey").value = twpConfig.get("llmApiKey")
+
+    $("#llmApiEndpoint").oninput = e => {
+        twpConfig.set("llmApiEndpoint", e.target.value)
+    }
+    $("#llmApiEndpoint").value = twpConfig.get("llmApiEndpoint")
+
+    $("#llmMaxTokens").oninput = e => {
+        twpConfig.set("llmMaxTokens", parseInt(e.target.value))
+    }
+    $("#llmMaxTokens").value = twpConfig.get("llmMaxTokens")
+
+    $("#llmTemperature").oninput = e => {
+        twpConfig.set("llmTemperature", parseFloat(e.target.value))
+    }
+    $("#llmTemperature").value = twpConfig.get("llmTemperature")
+
+    $("#llmTimeout").oninput = e => {
+        twpConfig.set("llmTimeout", parseInt(e.target.value))
+    }
+    $("#llmTimeout").value = twpConfig.get("llmTimeout")
+
+    $("#llmPromptTemplate").oninput = e => {
+        twpConfig.set("llmPromptTemplate", e.target.value)
+    }
+    $("#llmPromptTemplate").value = twpConfig.get("llmPromptTemplate")
+
+    function updateLLMProviderDefaults() {
+        const provider = $("#llmProvider").value
+        const modelInput = $("#llmModel")
+        const endpointInput = $("#llmApiEndpoint")
+        
+        // Update default values based on provider
+        switch (provider) {
+            case 'openai':
+                modelInput.value = 'gpt-3.5-turbo'
+                endpointInput.value = 'https://api.openai.com/v1/chat/completions'
+                twpConfig.set('llmModel', 'gpt-3.5-turbo')
+                twpConfig.set('llmApiEndpoint', 'https://api.openai.com/v1/chat/completions')
+                break
+            case 'anthropic':
+                modelInput.value = 'claude-3-sonnet-20240229'
+                endpointInput.value = 'https://api.anthropic.com/v1/messages'
+                twpConfig.set('llmModel', 'claude-3-sonnet-20240229')
+                twpConfig.set('llmApiEndpoint', 'https://api.anthropic.com/v1/messages')
+                break
+            case 'google':
+                modelInput.value = 'gemini-pro'
+                endpointInput.value = 'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent'
+                twpConfig.set('llmModel', 'gemini-pro')
+                twpConfig.set('llmApiEndpoint', 'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent')
+                break
+            case 'azure':
+                modelInput.value = 'gpt-35-turbo'
+                endpointInput.value = 'https://your-resource.openai.azure.com/openai/deployments/your-deployment/chat/completions?api-version=2023-07-01-preview'
+                twpConfig.set('llmModel', 'gpt-35-turbo')
+                twpConfig.set('llmApiEndpoint', 'https://your-resource.openai.azure.com/openai/deployments/your-deployment/chat/completions?api-version=2023-07-01-preview')
+                break
+            case 'groq':
+                modelInput.value = 'llama3-8b-8192'
+                endpointInput.value = 'https://api.groq.com/openai/v1/chat/completions'
+                twpConfig.set('llmModel', 'llama3-8b-8192')
+                twpConfig.set('llmApiEndpoint', 'https://api.groq.com/openai/v1/chat/completions')
+                break
+            case 'ollama':
+                modelInput.value = 'llama3'
+                endpointInput.value = 'http://localhost:11434/v1/chat/completions'
+                twpConfig.set('llmModel', 'llama3')
+                twpConfig.set('llmApiEndpoint', 'http://localhost:11434/v1/chat/completions')
+                break
+            case 'cohere':
+                modelInput.value = 'command'
+                endpointInput.value = 'https://api.cohere.ai/v1/chat'
+                twpConfig.set('llmModel', 'command')
+                twpConfig.set('llmApiEndpoint', 'https://api.cohere.ai/v1/chat')
+                break
+            case 'mistral':
+                modelInput.value = 'mistral-medium'
+                endpointInput.value = 'https://api.mistral.ai/v1/chat/completions'
+                twpConfig.set('llmModel', 'mistral-medium')
+                twpConfig.set('llmApiEndpoint', 'https://api.mistral.ai/v1/chat/completions')
+                break
+            case 'deepseek':
+                modelInput.value = 'deepseek-chat'
+                endpointInput.value = 'https://api.deepseek.com/chat/completions'
+                twpConfig.set('llmModel', 'deepseek-chat')
+                twpConfig.set('llmApiEndpoint', 'https://api.deepseek.com/chat/completions')
+                break
+            case 'moonshot':
+                modelInput.value = 'moonshot-v1-8k'
+                endpointInput.value = 'https://api.moonshot.cn/v1/chat/completions'
+                twpConfig.set('llmModel', 'moonshot-v1-8k')
+                twpConfig.set('llmApiEndpoint', 'https://api.moonshot.cn/v1/chat/completions')
+                break
+            case 'zhipu':
+                modelInput.value = 'glm-4'
+                endpointInput.value = 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
+                twpConfig.set('llmModel', 'glm-4')
+                twpConfig.set('llmApiEndpoint', 'https://open.bigmodel.cn/api/paas/v4/chat/completions')
+                break
+            case 'baichuan':
+                modelInput.value = 'Baichuan2-Turbo'
+                endpointInput.value = 'https://api.baichuan-ai.com/v1/chat/completions'
+                twpConfig.set('llmModel', 'Baichuan2-Turbo')
+                twpConfig.set('llmApiEndpoint', 'https://api.baichuan-ai.com/v1/chat/completions')
+                break
+            case 'qwen':
+                modelInput.value = 'qwen-turbo'
+                endpointInput.value = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation'
+                twpConfig.set('llmModel', 'qwen-turbo')
+                twpConfig.set('llmApiEndpoint', 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation')
+                break
+            case 'custom':
+                // No defaults for custom
+                break
+        }
+    }
+
+    // Initialize LLM section visibility
+    toggleLLMConfigSection()
+    updateLLMProviderDefaults()
 
 
     $("#translateTag_pre").onchange = e => {
@@ -714,7 +922,7 @@ twpConfig.onReady(function () {
 
         const element = document.createElement('a')
         element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(configJSON))
-        element.setAttribute('download', 'immersive-translate-backup_' + new Date().toISOString().replace(/T/, '_').replace(/\..+/, '').replace(/\:/g, ".") + ".txt")
+        element.setAttribute('download', 'web-translator-backup_' + new Date().toISOString().replace(/T/, '_').replace(/\..+/, '').replace(/\:/g, ".") + ".txt")
 
         element.style.display = 'none'
         document.body.appendChild(element)
@@ -799,24 +1007,6 @@ twpConfig.onReady(function () {
             $("#storageUsed").style.display = "inline-block"
         })
     }
-
-    // if (navigator.language === "pt-BR") {
-    //     $("#currency").value = "BRL"
-    //     $("#donateInUSD").style.display = "none"
-    // } else {
-    //     $("#currency").value = "USD"
-    //     $("#donateInBRL").style.display = "none"
-    // }
-
-    // $("#currency").onchange = e => {
-    //     if (e.target.value === "BRL") {
-    //         $("#donateInUSD").style.display = "none"
-    //         $("#donateInBRL").style.display = "block"
-    //     } else {
-    //         $("#donateInUSD").style.display = "block"
-    //         $("#donateInBRL").style.display = "none"
-    //     }
-    // }
 })
 
 window.scrollTo({

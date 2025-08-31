@@ -30,7 +30,6 @@ Promise.all([twpConfig.onReady(), getTabHostName()])
                     <a id="btnNeverTranslate" data-i18n="btnNeverTranslate">Never translate this site</a>
                     <a id="neverTranslateThisLanguage" data-i18n="btnNeverTranslateThisLanguage" display="none">Never translate this language</a>
                     <a id="btnMoreOptions" data-i18n="btnMoreOptions">More options</a>
-                    <a id="btnDonate" data-i18n="btnDonate" href="https://www.patreon.com/theowenyoung" target="_blank" rel="noopener noreferrer">Donate</a>
                 </div>
             </div>
             <div class="dropup">
@@ -71,11 +70,19 @@ Promise.all([twpConfig.onReady(), getTabHostName()])
                 showPopupMobile = newValue
                 popupMobile.show()
                 break
+            case "pageTranslatorService":
+                currentPageTranslatorService = newValue
+                // Update icon if popup is currently shown
+                if (getElemById) {
+                    updateIcon()
+                }
+                break
         }
     })
 
     let divElement
     let getElemById
+    let updateIcon = function() {} // Default empty function
 
     function hideMenu(e) {
         if (!divElement) return;
@@ -230,25 +237,116 @@ Promise.all([twpConfig.onReady(), getTabHostName()])
             })
         })()
 
-        function updateIcon() {
-            if (!getElemById) return;
-
-            if (currentPageTranslatorService === "yandex") {
-                getElemById("iconTranslate").src = chrome.runtime.getURL("/icons/yandex-translate-32.png")
-            } else {
-                getElemById("iconTranslate").src = chrome.runtime.getURL("/icons/google-translate-32.png")
+        /**
+         * Enhanced icon update function with error handling and service validation
+         * Updates the translation service icon based on current service configuration
+         */
+        updateIcon = function() {
+            if (!getElemById) {
+                console.warn('[Web Translator] Cannot update icon: popup not initialized');
+                return;
             }
-        }
-        updateIcon()
 
+            try {
+                const iconElement = getElemById("iconTranslate");
+                if (!iconElement) {
+                    console.warn('[Web Translator] Icon element not found');
+                    return;
+                }
+
+                // Service-to-icon mapping with validation
+                const serviceIcons = {
+                    "yandex": "/icons/yandex-translate-32.png",
+                    "llm": "/icons/llm-translate-32.png",
+                    "google": "/icons/google-translate-32.png" // default
+                };
+
+                // Validate current service and fallback to google if invalid
+                const validServices = ["google", "yandex", "llm"];
+                const serviceToUse = validServices.includes(currentPageTranslatorService) 
+                    ? currentPageTranslatorService 
+                    : "google";
+
+                // Update icon with error handling
+                const iconPath = serviceIcons[serviceToUse];
+                iconElement.src = chrome.runtime.getURL(iconPath);
+                
+                // Log icon update for debugging
+                console.log(`[Web Translator] Icon updated for service: ${serviceToUse}`);
+                
+            } catch (error) {
+                console.error('[Web Translator] Error updating service icon:', error);
+                // Attempt to set default icon as fallback
+                try {
+                    const iconElement = getElemById("iconTranslate");
+                    if (iconElement) {
+                        iconElement.src = chrome.runtime.getURL("/icons/google-translate-32.png");
+                    }
+                } catch (fallbackError) {
+                    console.error('[Web Translator] Failed to set fallback icon:', fallbackError);
+                }
+            }
+        };
+        
+        // Initialize icon display
+        updateIcon();
+
+        /**
+         * Enhanced configuration change listener for service switching
+         * Provides real-time updates when service configuration changes
+         */
+        const handleServiceConfigChange = (configName, newValue) => {
+            if (configName === "pageTranslatorService") {
+                try {
+                    console.log(`[Web Translator] Service config changed to: ${newValue}`);
+                    currentPageTranslatorService = newValue;
+                    updateIcon();
+                } catch (error) {
+                    console.error('[Web Translator] Error handling service config change:', error);
+                }
+            }
+        };
+
+        // Register config change listener
+        twpConfig.onChanged(handleServiceConfigChange);
+
+        /**
+         * Enhanced service switching click handler
+         * Delegates to pageTranslator for centralized service switching logic
+         */
         getElemById("iconTranslate").onclick = e => {
-            pageTranslator.swapTranslationService()
-
-            currentPageTranslatorService = currentPageTranslatorService === "google" ? "yandex" : "google"
-            updateIcon()
-
-            twpConfig.set("pageTranslatorService", currentPageTranslatorService)
-        }
+            try {
+                e.preventDefault(); // Prevent any default behavior
+                
+                // Delegate to centralized service switching logic
+                pageTranslator.swapTranslationService();
+                
+                // Enhanced config synchronization with retry mechanism
+                const updateWithRetry = (attempts = 3) => {
+                    try {
+                        currentPageTranslatorService = twpConfig.get("pageTranslatorService");
+                        updateIcon();
+                    } catch (error) {
+                        console.warn(`[Web Translator] Config sync attempt ${4 - attempts} failed:`, error);
+                        if (attempts > 1) {
+                            setTimeout(() => updateWithRetry(attempts - 1), 20);
+                        } else {
+                            console.error('[Web Translator] Failed to sync config after all attempts');
+                            // Use fallback - assume service switched successfully
+                            updateIcon();
+                        }
+                    }
+                };
+                
+                // Start update with small delay to ensure config is saved
+                setTimeout(() => updateWithRetry(), 15);
+                
+            } catch (error) {
+                console.error('[Web Translator] Error in service switch handler:', error);
+                // Attempt to update icon even if switch failed
+                updateIcon();
+            }
+        };
 
         getElemById("btnOriginal").onclick = e => {
             pageTranslator.restorePage()
@@ -301,18 +399,11 @@ Promise.all([twpConfig.onReady(), getTabHostName()])
             })
         }
 
-        getElemById("btnDonate").onclick = e => {
-            e.preventDefault()
-            chrome.runtime.sendMessage({
-                action: "openDonationPage"
-            })
-        }
-
         document.addEventListener("blur", hideMenu)
         document.addEventListener("click", hideMenu)
 
 
-        getElemById("btnDonate").innerHTML += " &#10084;"
+        // removed donation button code
     }
 
     popupMobile.hide = function () {
